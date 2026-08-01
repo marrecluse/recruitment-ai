@@ -1,0 +1,121 @@
+\documentclass[12pt,a4paper]{report}
+
+% ── Packages ─────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{float}
+
+% ── Hyperlink style ──────────────────────────────────────────
+\hypersetup{colorlinks=true,linkcolor=blue!70!black,citecolor=blue!70!black,urlcolor=blue!70!black}
+
+% ── Line spacing ─────────────────────────────────────────────
+\onehalfspacing
+
+% ── Header / footer ──────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\leftmark}
+\lhead{RecruitAI — Group 18}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Code listing style ───────────────────────────────────────
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+}
+
+% ── Title formatting ─────────────────────────────────────────
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{blue!70!black}}
+  {\chaptertitlename\ \thechapter}{12pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{20pt}{20pt}
+
+% ─────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title Page ───────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{blue!70!black} RecruitAI: An NLP-Based Automated\\[0.4em]
+  Resume Screening and Intelligent\\[0.4em] Job Matching System\par}
+  \vspace{1.5cm}
+  {\large\itshape MSc Masters Project — Final Report\par}
+  \vspace{0.5cm}
+  {\large University of the West of Scotland\\
+  School of Computing, Engineering and Physical Sciences\par}
+  \vspace{1.5cm}
+  \rule{\linewidth}{0.4pt}\\[0.4em]
+  {\large\bfseries Group 18\par}
+  \vspace{0.5cm}
+  \begin{tabular}{ll}
+    \textbf{Faisal Jabbar}  & Frontend Interface \& Transparent AI Presentation \\
+    \textbf{Ali Hamza}      & Backend API \& MERN Infrastructure \\
+    \textbf{Faisal Arbab}   & Intelligent Job Matching Algorithm \\
+    \textbf{Sada Bahar}     & NLP-Based Resume Parsing \\
+  \end{tabular}\\[0.5em]
+  \rule{\linewidth}{0.4pt}
+  \vspace{1cm}
+  {\large Supervisor: Faizan\par}
+  {\large Academic Year: 2025--2026\par}
+  \vfill
+  {\small Submitted in partial fulfilment of the requirements for the\\
+  MSc degree at the University of the West of Scotland}
+\end{titlepage}
+
+% ── Abstract ─────────────────────────────────────────────────
+\begin{abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+The growing volume of digital job applications has created a significant research challenge in computational recruitment: how can Natural Language Processing (NLP) techniques accurately extract, interpret, and semantically match the unstructured content of resume documents against structured job requirements? This project investigates and compares NLP-based approaches to automated resume screening and candidate-job matching, implemented within a full-stack MERN web application that serves as the evaluation environment.
+
+The system comprises four integrated components: an NLP resume parsing pipeline using Named Entity Recognition (NER) with rule-based, spaCy, and BERT-based approaches; an intelligent job matching algorithm comparing TF-IDF cosine similarity, Sentence-BERT embeddings, and BERT binary classification; a secure RESTful backend API built with Node.js, Express, and MongoDB with GDPR compliance and asynchronous job queuing; and a React-based frontend providing transparent, accessible presentation of AI-generated match scores and skill-gap analyses.
+
+The project addresses a documented gap in the literature: the absence of open, reproducible evaluations of NLP recruitment pipelines across diverse, multi-format datasets with documented bias assessments. Results contribute a benchmark comparison of NER and semantic matching approaches, a bias audit of algorithmic candidate rankings, and a user-centred interface design for transparent AI-assisted recruitment decisions.
+\end{abstract}
+
+% ── TOC ──────────────────────────────────────────────────────
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ── Chapters ─────────────────────────────────────────────────
+\input{chapters/chapter1_introduction}
+\input{chapters/chapter2_literature_review}
+
+% ── Bibliography ─────────────────────────────────────────────
+\bibliographystyle{agsm}
+\bibliography{bibliography/references}
+
+% ── Appendices ───────────────────────────────────────────────
+\appendix
+\input{appendices/appendix_faisal_jabbar}
+\input{appendices/appendix_sada_bahar}
+\input{appendices/appendix_ali_hamza}
+\input{appendices/appendix_faisal_arbab}
+
+\end{document}

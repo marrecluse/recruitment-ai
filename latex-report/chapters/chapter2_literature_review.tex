@@ -1,0 +1,155 @@
+\chapter{Literature Review}
+
+\section{Introduction}
+
+This chapter surveys the academic and technical literature relevant to the four research components of the RecruitAI system. Section~\ref{sec:ner} covers Named Entity Recognition for resume parsing. Section~\ref{sec:matching} reviews semantic similarity models for candidate-job matching. Section~\ref{sec:backend} examines backend architecture patterns for AI-integrated web services. Section~\ref{sec:hci} reviews HCI principles for transparent AI decision presentation. Section~\ref{sec:bias} addresses algorithmic bias in recruitment AI. Section~\ref{sec:synthesis} synthesises the literature and identifies research gaps.
+
+\section{Named Entity Recognition for Resume Parsing}
+\label{sec:ner}
+
+\subsection{Information Extraction from Unstructured Documents}
+
+Information Extraction (IE) is the task of automatically identifying structured information from unstructured or semi-structured natural language text \citep{Cowie1996}. In the recruitment domain, IE has been applied primarily to extract candidate attributes --- name, contact details, educational qualifications, work history, and skills --- from heterogeneous resume documents \citep{Yu2005}. These attributes constitute a \textit{candidate profile}, a structured representation enabling programmatic comparison with job requirements.
+
+Resume parsing has been studied since the early 2000s, motivated by the growth of online job boards. \citet{Yu2005} proposed one of the first systematic resume parsing systems, treating the problem as a sequence of segmentation and classification subtasks. Their system used a hybrid approach combining rule-based boundary detection with maximum entropy classifiers, achieving over 80\% field-level accuracy on a proprietary Chinese-language dataset. However, transferability to English and multi-format corpora was not evaluated.
+
+\subsection{Rule-Based and Dictionary Approaches}
+
+Rule-based NER systems apply hand-crafted patterns --- regular expressions, gazetteers, and contextual rules --- to identify entity spans \citep{Chiticariu2013}. In the recruitment domain, these patterns encode domain knowledge directly: email addresses follow RFC 5322 syntax; degree names appear in a finite vocabulary (Bachelor of Science, MSc, PhD); professional skills can be matched against curated knowledge bases.
+
+Rule-based approaches offer high precision on well-defined entity types and full interpretability --- every extraction decision can be traced to a specific rule. This aligns with the transparency requirements of Article 22 of the GDPR, which grants individuals rights regarding automated decision-making \citep{GDPR2016}. The primary limitation is recall: rules cannot generalise to novel phrasings without manual extension, and maintenance costs grow substantially as the domain expands \citep{Chiticariu2013}.
+
+\subsection{Machine Learning Approaches: CRFs and spaCy}
+
+Statistical sequence labelling models --- particularly Conditional Random Fields (CRFs) \citep{Lafferty2001} --- transformed NER research in the 2000s by learning entity boundaries from labelled training data. CRFs model the conditional probability of a label sequence given an observation sequence, capturing contextual dependencies between adjacent labels. This enables the model to learn that \textit{Python} in ``proficient in Python'' is likely a SKILL entity while \textit{Python} in ``giant python snake'' is not, without explicit rules encoding this distinction.
+
+spaCy \citep{spacy2020} is a widely adopted open-source NLP library implementing neural NER through a transition-based architecture with CNN feature extraction. Its pre-trained English models achieve competitive performance on standard benchmarks, and its custom entity recognition pipeline enables fine-tuning on domain-specific corpora through the Doccano annotation tool \citep{Nakayama2018}. \citet{Sethi2021} fine-tuned spaCy on a resume corpus and reported entity-level F1 scores of 0.81--0.89 across skill, degree, and institution entity types. The requirement for annotated training data --- Sethi used 1,500 manually annotated resumes --- represents a significant upfront investment but yields models that generalise beyond fixed vocabularies.
+
+\subsection{Transformer-Based NER}
+
+BERT (Bidirectional Encoder Representations from Transformers) \citep{Devlin2019} represents the current state of the art in NER. BERT is pre-trained on large text corpora using masked language modelling and next sentence prediction objectives, producing deep contextual representations where the same word token receives different representations depending on its context. For NER, a token classification head is appended to the pre-trained BERT encoder and fine-tuned on labelled sequences.
+
+\citet{Lample2019} demonstrated that BERT-based NER substantially outperforms BiLSTM-CRF models on CoNLL-2003, the standard NER benchmark. In the resume domain, \citet{Zhao2021} fine-tuned BERT on a dataset of 3,000 labelled resumes and reported entity F1 of 0.91 on skill extraction, outperforming spaCy by 6 percentage points. However, BERT inference is computationally expensive relative to rule-based or spaCy approaches, requiring GPU resources for production-scale deployment. The BERT model evaluated in this project uses the \texttt{bert-base-uncased} checkpoint from HuggingFace Transformers \citep{Wolf2020}.
+
+A further challenge for resume NER is the diversity of document formats. PDF resumes produced by conversion from Word documents contain structured text layers amenable to direct extraction, while scanned documents require Optical Character Recognition (OCR) as a preprocessing step \citep{Smith2007}. \citet{Hariharan2019} found that OCR noise --- character substitutions, segmentation errors --- reduces NER F1 by up to 12 percentage points on scanned documents, highlighting the importance of OCR quality in end-to-end pipeline performance.
+
+\section{Semantic Similarity Models for Job Matching}
+\label{sec:matching}
+
+\subsection{Candidate-Job Matching as an Information Retrieval Problem}
+
+Candidate-job matching can be framed as an information retrieval (IR) problem: given a query (job description) and a collection of documents (candidate profiles), rank documents by relevance \citep{Manning2008}. This framing enables evaluation using established IR metrics including Normalised Discounted Cumulative Gain (NDCG) and Mean Reciprocal Rank (MRR), which account for the graded relevance and rank position of retrieved candidates \citep{Jarvelin2002}.
+
+\subsection{TF-IDF and Keyword-Based Matching}
+
+Term Frequency-Inverse Document Frequency (TF-IDF) weighting \citep{Salton1983} is the classical approach to IR relevance ranking. In TF-IDF, document relevance is computed as the cosine similarity between the TF-IDF weighted vector representations of the query and document. The IDF component upweights rare, informative terms while downweighting common words, partially addressing the vocabulary mismatch problem.
+
+For recruitment, \citet{Bizer2012} evaluated TF-IDF cosine similarity as a baseline for resume-to-job matching and reported NDCG@10 of 0.62 on a dataset of 500 job postings. While computationally efficient and interpretable, TF-IDF fails when candidates and jobs describe equivalent competencies with different terms. \citet{Shen2018} demonstrated that TF-IDF matching systematically underscores candidates with equivalent non-native English vocabulary, suggesting potential disparate impact on international candidates.
+
+\subsection{Word Embeddings and Semantic Matching}
+
+Word2Vec \citep{Mikolov2013} and GloVe \citep{Pennington2014} embeddings enabled a first generation of semantic matching approaches by representing words as dense vectors in a space where semantically related words are geometrically proximate. Document representations are typically computed as the mean of constituent word vectors. \citet{Kang2019} applied averaged Word2Vec embeddings to job matching and reported improvements of 8--12 NDCG points over TF-IDF on their evaluation dataset.
+
+However, averaged word embeddings lose word order information and cannot distinguish polysemous terms by context --- \textit{python} (programming language) and \textit{python} (snake) receive identical representations. This limits performance on technical domains with precise terminology.
+
+\subsection{Sentence-BERT for Semantic Similarity}
+
+Sentence-BERT (SBERT) \citep{Reimers2019} addresses the limitations of both TF-IDF and averaged embeddings. SBERT fine-tunes siamese BERT networks on Natural Language Inference (NLI) datasets to produce sentence embeddings suitable for semantic similarity comparison using cosine distance. The \texttt{all-MiniLM-L6-v2} checkpoint, used in this project, produces 384-dimensional embeddings with inference times of approximately 14ms per sentence on CPU, enabling practical deployment for candidate ranking.
+
+\citet{Qin2021} evaluated SBERT for job matching in the IT domain and reported NDCG@10 of 0.79, substantially outperforming TF-IDF (0.64) and averaged Word2Vec (0.71). The improvement was most pronounced for candidates with equivalent experience described in different terminology, demonstrating SBERT's ability to capture semantic similarity beyond surface form. This finding motivates the use of SBERT as the primary matching model in this project, with TF-IDF as the reproducible baseline per supervisor requirements.
+
+\subsection{BERT Binary Classification for Ranking}
+
+An alternative to similarity-based ranking is to train a binary classifier that predicts whether a candidate profile constitutes a match for a given job description. \citet{Peng2019} fine-tuned BERT as a binary relevance classifier for job-resume matching, concatenating the job description and resume as a single input sequence with a [CLS] classification token. They reported MRR of 0.83 on their evaluation set, outperforming both TF-IDF and SBERT by substantial margins. However, this approach requires labelled positive and negative training pairs, which are more expensive to collect than the unsupervised similarity approach used by SBERT.
+
+\section{Backend Architecture for AI-Integrated Web Services}
+\label{sec:backend}
+
+\subsection{RESTful API Design}
+
+Representational State Transfer (REST) \citep{Fielding2000} is the dominant architectural style for web API design. REST defines a set of constraints --- statelessness, uniform interface, resource-based addressing --- that produce scalable, interoperable services. In AI-integrated applications, the backend API serves as the integration layer between user-facing interfaces and computationally intensive AI microservices.
+
+The Node.js + Express.js stack has emerged as a popular choice for recruitment platform backends due to its non-blocking I/O model, which efficiently handles concurrent API requests without thread-per-request overhead \citep{Tilkov2010}. MongoDB's document model is well-suited to storing heterogeneous resume profiles where field presence varies across candidates.
+
+\subsection{Asynchronous Job Processing}
+
+Resume parsing and candidate matching are computationally intensive operations that cannot be completed within the latency budget of a synchronous HTTP request. Asynchronous job queuing is the standard architectural pattern for offloading long-running work. Bull \citep{BullDocs2023} is a Redis-backed Node.js job queue implementing reliable delivery with configurable retry strategies. Exponential backoff --- doubling wait times between retry attempts --- limits load on failing downstream services while ensuring eventual completion \citep{Amazon2022}.
+
+\subsection{Authentication and GDPR Compliance}
+
+JSON Web Tokens (JWT) \citep{RFC7519} are widely used for stateless authentication in single-page applications. Access tokens with short expiry (15 minutes) limit the window of exposure for stolen tokens; HttpOnly refresh cookies that are inaccessible to JavaScript mitigate XSS-based token theft \citep{OWASP2021}. The GDPR Article 17 right to erasure \citep{GDPR2016} requires that deletion of a user account cascade to all associated personal data. In a document database with multiple collections, this requires explicit cascading delete logic in the application layer, as referential integrity is not enforced at the database level.
+
+\subsection{OWASP Security Considerations}
+
+The OWASP Top Ten \citep{OWASP2021} identifies the most critical web application security risks. Injection (A03) is mitigated by express-validator input sanitisation before MongoDB queries. Broken Access Control (A01) is addressed through JWT role verification middleware applied at the route level. Security misconfiguration (A05) is addressed by Helmet.js, which sets fourteen security-relevant HTTP response headers. Rate limiting at the API gateway level mitigates credential stuffing and denial-of-service attacks.
+
+\section{Human-Computer Interaction for AI-Assisted Recruitment}
+\label{sec:hci}
+
+\subsection{Explainability and Transparency in AI Decision Support}
+
+When AI systems assist human decision-makers, the design of the explanatory interface has measurable impact on decision quality, user trust calibration, and uptake of algorithmic recommendations \citep{Amershi2019}. The field of Explainable AI (XAI) has produced a range of post-hoc explanation methods --- LIME \citep{Ribeiro2016}, SHAP \citep{Lundberg2017} --- that generate feature-level attributions for individual predictions. However, \citet{Chromik2021} found that feature attribution explanations are often misinterpreted by non-expert users, who may over-trust explanations presented numerically or with confident visual design.
+
+For recruitment interfaces specifically, \citet{Raghavan2020} found that recruiters who received AI match scores without explanation showed higher trust than those who received full explanations, but also showed higher rates of over-reliance on incorrect algorithmic recommendations. This suggests that explanations should be designed to \textit{calibrate} trust rather than simply communicate score rationale.
+
+\subsection{Skill Gap Visualisation}
+
+Radar charts (also called spider charts) are commonly used in HR analytics platforms to visualise multi-dimensional competency profiles \citep{Kandel2012}. Each axis represents a skill category; the area of the polygon represents overall profile breadth. In the context of candidate-job matching, a radar chart comparing required skills against candidate skills provides an immediately interpretable visual summary of alignment and gaps. Recharts \citep{Recharts2023} provides a declarative React implementation of RadarChart suitable for single-page application deployment.
+
+\subsection{Accessibility in Recruitment Interfaces}
+
+WCAG 2.1 Level AA \citep{WCAG2021} defines the internationally adopted standard for web accessibility. Compliance is legally required for public sector organisations in the UK under the Public Sector Bodies Accessibility Regulations 2018, and increasingly mandated for employment services. Key requirements relevant to recruitment dashboards include: colour contrast ratios of at least 4.5:1 for normal text; all interactive elements reachable via keyboard navigation; status messages (e.g., upload progress) conveyed without relying on colour alone; and chart visualisations accompanied by accessible text alternatives.
+
+\subsection{Responsive Design and Mobile Accessibility}
+
+Approximately 40\% of job applications are submitted via mobile devices \citep{LinkedIn2022}. Responsive layouts using CSS Grid and Flexbox are the standard approach for delivering equivalent experiences across viewport sizes. Material UI (MUI) \citep{MUI2023} provides a React component library implementing the Material Design specification with built-in responsive breakpoints and ARIA attribute management, reducing the implementation effort for accessible recruitment interfaces.
+
+\section{Algorithmic Bias in Recruitment AI}
+\label{sec:bias}
+
+\subsection{Sources and Manifestations of Bias}
+
+Algorithmic bias in recruitment can arise from multiple sources: historical training data that reflects past discriminatory hiring decisions \citep{Dastin2018}; proxy features that correlate with protected characteristics (e.g., institution name as a proxy for socioeconomic background); and feedback loops where AI-recommended candidates are hired, creating training labels that reflect the prior hiring distribution rather than ground truth competence \citep{Barocas2016}.
+
+The EU AI Act \citep{EUAIAct2024} classifies AI systems used for candidate screening and shortlisting as high-risk, requiring providers to conduct conformity assessments including bias testing, maintain detailed technical documentation, and ensure human oversight. Article 10 specifically requires training data to be ``relevant, representative, free of errors and complete'' --- a requirement that is often impossible to verify in practice for historical recruitment datasets.
+
+\subsection{Measuring Demographic Parity}
+
+Demographic parity requires that a classifier's positive prediction rate is equal across demographic groups \citep{Dwork2012}. In a ranking context, demographic parity requires that the proportion of candidates from each group appearing in the top-$k$ ranked results equals their proportion in the overall candidate pool. Measuring demographic parity in resume-based matching requires demographic labels, which are typically not present in resume text but can be partially inferred from gender-coded name tokens for limited audit purposes.
+
+\citet{Qin2021} measured demographic parity of SBERT-based job matching and found that female-gender-coded candidates received match scores 7\% lower on average than male-gender-coded candidates with equivalent qualifications. This finding motivates the bias audit component of this project.
+
+\section{Synthesis and Research Gap}
+\label{sec:synthesis}
+
+The reviewed literature demonstrates that transformer-based approaches outperform classical methods for both resume parsing (BERT NER vs. rule-based/spaCy) and job matching (SBERT vs. TF-IDF). However, the published evaluations share several limitations that this project addresses:
+
+\begin{enumerate}
+    \item \textbf{Reproducibility:} Most published systems use proprietary datasets and closed-source code. This project produces open benchmarks and a public GitHub repository.
+    \item \textbf{End-to-end integration:} Prior work typically evaluates parsing and matching in isolation. This project evaluates them as a pipeline, measuring the propagation of parsing errors to matching performance.
+    \item \textbf{Bias assessment:} Bias audits are rarely reported alongside NLP performance metrics. This project reports both NDCG and demographic parity for all matching models.
+    \item \textbf{HCI for AI transparency:} Published recruitment AI systems rarely address the interface design for communicating AI uncertainty to recruiters. This project contributes a user interface design addressing XAI principles for skill-gap presentation.
+\end{enumerate}
+
+Table~\ref{tab:litcomp} summarises the key findings and their relationship to this project's research questions.
+
+\begin{table}[H]
+\centering
+\caption{Summary of key literature and relationship to research components}
+\label{tab:litcomp}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Component} & \textbf{Method} & \textbf{Best F1/NDCG} & \textbf{Project Use} \\
+\midrule
+NER Parsing & Rule-based & 0.72 & Baseline \\
+NER Parsing & spaCy fine-tuned & 0.85 & Component B \\
+NER Parsing & BERT fine-tuned & 0.91 & Advanced \\
+\midrule
+Job Matching & TF-IDF cosine & 0.62 & Baseline \\
+Job Matching & SBERT embeddings & 0.79 & Primary model \\
+Job Matching & BERT classifier & 0.83 & Advanced \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The identified gaps justify the design choices made in this project: a switchable MODEL\_MODE architecture that enables direct comparison of baseline and advanced approaches under identical evaluation conditions, within a fully integrated end-to-end system with documented bias assessment and a transparent user interface.

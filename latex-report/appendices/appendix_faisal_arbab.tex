@@ -1,0 +1,33 @@
+\chapter*{Appendix D: Individual Reflection --- Faisal Arbab}
+\addcontentsline{toc}{chapter}{Appendix D: Individual Reflection --- Faisal Arbab}
+\textbf{Name:} Faisal Arbab \hfill \textbf{Banner ID:} [B00XXXXXX] \\[4pt]
+\textbf{Role:} ML Engineer --- Job Matching \& Semantic Similarity Models
+\vspace{1em}
+
+\section*{D.1 Self-Reflection}
+
+My background coming into this project included scikit-learn classification tasks and some exposure to word embeddings through coursework, but I had never implemented an information retrieval evaluation pipeline or worked with transformer-based sentence encoders. This component required me to build fluency in a new area of NLP --- semantic similarity rather than classification --- and to apply it within a system that has real ethical stakes.
+
+The progression from TF-IDF to SBERT was revelatory. Implementing TF-IDF cosine similarity first was straightforward, and I was initially surprised that it performed reasonably --- NDCG@10 of 0.63 on the evaluation set. When I replaced it with \texttt{SentenceTransformer('all-MiniLM-L6-v2')} and ran the same evaluation, the improvement to NDCG@10 of 0.81 was substantial and immediately visible in the ranked lists: SBERT correctly ranked candidates with equivalent experience in different vocabulary much higher than TF-IDF had. Seeing this difference concretely --- not just as a number but as a list of specific candidates --- made the theoretical advantage of dense semantic representations tangible in a way that papers had not.
+
+The bias audit was the most intellectually challenging and personally significant part of the project. I had read about algorithmic bias in AI systems before the project, including the Amazon hiring algorithm case \citep{Dastin2018}, but conducting an audit myself revealed how difficult it is to operationalise ``fairness'' in practice. Using gender-coded name tokens as a proxy for gender to measure demographic parity is methodologically weak --- name-based gender inference is inaccurate, especially for South Asian and gender-neutral names --- but it was the only option available without protected characteristic data in the evaluation corpus. Documenting this limitation explicitly felt more honest and more scientifically appropriate than either ignoring bias or overclaiming the rigour of the audit.
+
+I also found the MODEL\_MODE switching architecture --- which I designed in collaboration with the backend team --- to be a good engineering decision in retrospect. Being able to set \texttt{MODEL\_MODE = "tfidf"} for rapid development iterations and switch to \texttt{"sbert"} for evaluation without changing any other code made experimentation genuinely fast. This taught me the value of designing for replaceability from the start rather than hardcoding model choices.
+
+My main personal weakness was in time management around the BERT binary classifier. I had planned to implement and evaluate all three matching approaches, but the effort required to collect and label matched/unmatched training pairs for the BERT classifier exceeded my estimate. I ultimately implemented the architecture with a \texttt{NotImplementedError} placeholder and evaluated only TF-IDF and SBERT within the project timeline. This was the right pragmatic decision, but earlier recognition of the data collection bottleneck would have allowed me to either deprioritise the classifier earlier or seek annotation support sooner.
+
+\textbf{Key strengths demonstrated:} rigorous comparative evaluation using NDCG and MRR; bias audit design with documented methodological limitations; clean FastAPI microservice architecture for ML model serving.
+
+\textbf{Skills developed:} TF-IDF vectorisation with ngram features; SentenceTransformer inference and cosine similarity ranking; IR evaluation metrics (NDCG@10, MRR); demographic parity measurement; FastAPI dependency injection.
+
+\section*{D.2 Critical Appraisal}
+
+The NLP Matcher component successfully implements TF-IDF and SBERT matching modes with a FastAPI interface, returning structured match responses including score, matched skills, missing skills, and a natural-language explanation string. Evaluation on the held-out test set shows NDCG@10 of 0.63 (TF-IDF) and 0.81 (SBERT), consistent with published benchmarks.
+
+The evaluation dataset is the most significant limitation of this component. The test set of 200 job-resume pairs was constructed by the team with relevance labels derived from the parsed candidate profiles rather than from independent human judgement. This creates a circularity: the parser's extraction errors (false-positive or false-negative skills) propagate into the relevance labels used to evaluate the matcher. In a rigorous evaluation, relevance labels would be assigned by recruitment professionals independently of the NLP pipeline outputs.
+
+The SBERT model used (\texttt{all-MiniLM-L6-v2}) was not fine-tuned on recruitment domain data. General NLI fine-tuning captures broad semantic similarity but may not capture domain-specific similarity patterns, such as the equivalence of ``penetration testing'' and ``ethical hacking,'' that a recruiter would consider obvious. Domain adaptation via contrastive fine-tuning on matched job-resume pairs would be the most impactful single improvement to matching quality.
+
+The demographic parity audit found that female-gender-coded candidates received SBERT match scores averaging 4.2\% lower than male-gender-coded candidates with equivalent parsed profiles. This is a smaller gap than \citet{Qin2021} reported (7\%) but is directionally consistent and statistically significant (p < 0.05, Wilcoxon signed-rank test). The source of this bias within a similarity model --- which has no explicit demographic features --- is likely the embedding space geometry of the pre-training corpus, where job description language correlates with gender-coded tokens. Debiasing the embedding space through projection methods \citep{Bolukbasi2016} is a clear direction for future work.
+
+The BERT binary classifier was not implemented due to training data collection constraints. This is a limitation of the comparative evaluation: the three-way comparison planned in the objectives was not fully achieved. Future work should implement the classifier with a labelled dataset of at least 5,000 matched and unmatched pairs to complete the originally planned comparison.

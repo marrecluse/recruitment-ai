@@ -1,0 +1,71 @@
+\chapter{Introduction}
+
+\section{Background and Motivation}
+
+The global recruitment industry processes hundreds of millions of job applications each year. In the United Kingdom alone, the online recruitment market generates over \textsterling 1.2 billion annually, with the average corporate job posting attracting 250 or more applicants \citep{CIPD2023}. The initial screening stage --- identifying qualified candidates from this volume of applications --- is predominantly manual in most organisations. A recruiter reading 250 CVs at five minutes each requires over twenty hours of work per vacancy, creating a significant operational bottleneck and introducing inconsistency driven by cognitive bias, fatigue, and subjective judgement.
+
+Computational approaches to resume screening have attracted sustained research interest since the early 2000s. Early systems applied rule-based keyword matching to identify resumes containing required skills or qualifications. While computationally simple, keyword-based approaches fail to capture the semantic relationships between equivalent terms: a candidate with \textit{statistical modelling} expertise is relevant to a \textit{data analysis} role, yet keyword matching assigns zero similarity because the terms do not overlap \citep{Salton1983}. This failure mode systematically disadvantages candidates who use different vocabulary for equivalent competencies, which may correlate with educational background, professional culture, or non-native language use.
+
+The emergence of transformer-based language models --- particularly BERT \citep{Devlin2019} and its derivatives --- has enabled a qualitatively different approach to recruitment NLP. These models learn rich, contextual representations of language from large corpora, enabling semantic similarity comparisons that capture meaning rather than surface form. Sentence-BERT \citep{Reimers2019} extended this capability to efficient sentence-level embeddings suitable for large-scale ranking tasks. However, the application of these models to recruitment remains fragmented in the published literature: evaluations are typically conducted on proprietary datasets, use inconsistent metrics, and rarely include assessments of demographic fairness in algorithmic outputs.
+
+A further concern motivating this project is algorithmic bias. The widely reported case of Amazon's internal AI hiring tool \citep{Dastin2018}, which was found to systematically downrank candidates who attended women's colleges, demonstrated that recruitment algorithms trained on historical data can encode and amplify systemic biases. The EU Artificial Intelligence Act \citep{EUAIAct2024} classifies AI systems used in employment decision support as high-risk, imposing specific requirements for transparency, documentation, and bias assessment. Any research system operating in this domain must address these ethical requirements explicitly.
+
+\section{Problem Statement}
+
+This project addresses the following research problem:
+
+\textit{How accurately and fairly can a pipeline of NLP techniques --- specifically Named Entity Recognition for resume parsing and semantic similarity models for candidate-job matching --- automate the initial screening stage of recruitment, when evaluated across a diverse, multi-format dataset with documented bias assessment and deployed in a realistic end-to-end system?}
+
+This problem encompasses two primary research questions:
+\begin{enumerate}
+    \item Which NER approach --- rule-based matching, fine-tuned spaCy, or fine-tuned BERT token classification --- achieves the highest F1-score for structured information extraction from multi-format resume documents?
+    \item Which semantic matching approach --- TF-IDF cosine similarity, Sentence-BERT embeddings, or BERT binary classification --- achieves the best ranking performance (NDCG@10, MRR) for candidate-job matching, and what demographic parity properties do these rankings exhibit?
+\end{enumerate}
+
+\section{Aims and Objectives}
+
+\subsection{Overall Aim}
+
+To design, implement, and evaluate an open-source, end-to-end AI-powered recruitment system that provides reproducible benchmark comparisons of NLP-based resume parsing and job matching approaches, with documented bias assessment and a user-centred interface for transparent AI decision presentation.
+
+\subsection{Individual Component Objectives}
+
+The project is structured as four individually assessed research components, each contributing to the shared system:
+
+\paragraph{Sada Bahar --- Resume Parsing:} Implement and compare rule-based, spaCy, and BERT-based NER approaches on a corpus of 2,000 multi-format resume documents, producing structured JSON candidate profiles and an open evaluation benchmark.
+
+\paragraph{Faisal Arbab --- Job Matching:} Implement and compare TF-IDF, Sentence-BERT, and BERT classifier approaches to candidate-job matching, evaluating with standard information retrieval metrics and conducting a documented demographic parity bias audit.
+
+\paragraph{Ali Hamza --- Backend Infrastructure:} Design and implement a secure, GDPR-compliant RESTful API using Node.js, Express.js, and MongoDB with asynchronous NLP service orchestration via Bull/Redis job queuing.
+
+\paragraph{Faisal Jabbar --- Frontend Interface:} Design and implement a React-based single-page application providing transparent, accessible presentation of AI match scores and skill-gap analyses to recruiter and candidate users.
+
+\section{System Overview}
+
+Figure~\ref{fig:architecture} presents the high-level architecture of the RecruitAI system. The system comprises four interconnected services:
+
+\begin{enumerate}
+    \item \textbf{React Frontend} (port 3000): Single-page application providing recruiter and candidate interfaces with real-time match score visualisation.
+    \item \textbf{Node.js Backend API} (port 5000): RESTful API managing authentication, data persistence, file upload, and NLP service orchestration.
+    \item \textbf{NLP Parser Service} (port 8001): FastAPI microservice implementing resume parsing with configurable NER models.
+    \item \textbf{NLP Matcher Service} (port 8002): FastAPI microservice implementing candidate-job matching with configurable similarity models.
+\end{enumerate}
+
+Supporting infrastructure includes MongoDB for document storage and Redis for Bull job queue management. All services are containerised using Docker and orchestrated with Docker Compose.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/system_architecture}
+\caption{High-level system architecture of the RecruitAI platform}
+\label{fig:architecture}
+\end{figure}
+
+\section{Scope and Limitations}
+
+This project focuses on English-language resumes in PDF and DOCX formats. The NER evaluation is limited to nine entity types relevant to the recruitment domain. The job matching evaluation uses publicly available datasets and does not claim to represent the full diversity of real-world recruitment scenarios. The bias audit assesses demographic parity with respect to gender-coded name tokens only; other protected characteristics are outside the scope of this work.
+
+The system is implemented as a research prototype rather than a production-ready commercial platform. Security, scalability, and GDPR compliance implementations reflect research-appropriate standards and are documented as design contributions, not commercial certifications.
+
+\section{Report Structure}
+
+The remainder of this report is organised as follows. Chapter~2 presents the review of literature covering NLP techniques for information extraction, semantic similarity models, MERN stack architecture, and HCI design for AI-assisted decision support. Chapter~3 describes the research methodology adopted by each component. Chapter~4 presents the implementation of the four system components. Chapter~5 reports the experimental results and evaluation. Chapter~6 discusses findings in relation to research questions. Chapter~7 presents conclusions and directions for future work. Individual critical self-evaluations are included as appendices.

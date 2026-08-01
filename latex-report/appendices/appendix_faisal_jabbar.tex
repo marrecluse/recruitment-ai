@@ -1,0 +1,37 @@
+\chapter*{Appendix A: Individual Reflection --- Faisal Jabbar}
+\addcontentsline{toc}{chapter}{Appendix A: Individual Reflection --- Faisal Jabbar}
+\textbf{Name:} Faisal Jabbar \hfill \textbf{Banner ID:} [B00XXXXXX] \\[4pt]
+\textbf{Role:} Frontend Developer --- React Interface \& UX Design
+\vspace{1em}
+
+\section*{A.1 Self-Reflection}
+
+At the outset of this project, my experience with React was primarily confined to small tutorial-level applications. Building a production-grade SPA with Redux Toolkit, a JWT authentication flow, and accessible data visualisations felt genuinely daunting. Looking back, this project represents the most significant leap in my frontend engineering capability during the MSc.
+
+The most substantial learning came from implementing the authentication layer. I had a surface-level understanding of JWTs from course readings, but wiring up the Axios request interceptor --- attaching Bearer tokens, detecting 401 responses, calling the refresh endpoint, and retrying the original request transparently --- required a depth of understanding I had not developed before. The moment the interceptor worked end-to-end was one of the most satisfying moments of the project.
+
+Redux Toolkit also challenged my assumptions. I initially resisted it, preferring to pass props through component trees. After two weeks of prop-drilling across the recruiter dashboard, I restructured around \texttt{createAsyncThunk} and \texttt{createSlice}. The improvement in code clarity was immediate and instructive: this is a lesson that required lived experience rather than reading.
+
+The SkillGapChart component was technically approachable but conceptually demanding. Before designing it, I read HCI literature on AI transparency --- particularly \citet{Raghavan2020}, who found that match scores without explanation can cause recruiters to over-rely on incorrect algorithmic outputs. This influenced my choice to make the radar chart collapsible but prominently positioned by default, aiming to calibrate trust rather than merely display data. Designing for appropriate human-AI interaction, not just information presentation, felt like a genuine intellectual contribution.
+
+Accessibility was the area where I struggled most. I underestimated the effort required to meet WCAG 2.1 AA throughout the application. Colour contrast on the LinearProgress match-score bars required three iterations to pass the 4.5:1 ratio requirement. Screen-reader testing with VoiceOver revealed that the RadarChart SVG was completely opaque to assistive technology, requiring aria-label attributes and a hidden text summary of matched and missing skill counts. These issues would not have surfaced without explicit accessibility testing.
+
+I also underestimated the time cost of MUI theme customisation. Overriding component defaults inside a Redux Provider context created debugging friction that could have been avoided by establishing a design token system earlier and using Storybook for component isolation.
+
+\textbf{Key strengths demonstrated:} rapid prototyping of React component architecture; integration of Redux async thunks with real API endpoints; learning from HCI literature to inform design decisions.
+
+\textbf{Skills developed:} JWT refresh flow implementation; Recharts RadarChart customisation; WCAG 2.1 AA compliance auditing; Vite proxy configuration.
+
+\section*{A.2 Critical Appraisal}
+
+The frontend component achieved its primary objectives. Recruiter and candidate dashboards are functional; the JWT authentication cycle including token refresh works correctly; and the SkillGapChart presents matched and missing skills in a format accessible to non-technical users. However, a candid appraisal must acknowledge several limitations.
+
+First, the frontend relies on \texttt{localStorage} for access-token persistence. While the refresh token is stored in an HttpOnly cookie, the access token in \texttt{localStorage} is readable by any JavaScript on the page, creating a residual XSS risk \citep{OWASP2021}. A more secure implementation would store the access token in memory only and absorb the complexity of re-initialising state on page reload.
+
+Second, the 3-second polling delay after resume upload --- after which \texttt{fetchMyMatches} is called --- is a fragile heuristic. If the NLP pipeline takes longer due to queue depth or model inference time, the candidate dashboard shows stale data. A WebSocket or server-sent events connection for real-time status updates would be more robust, but was deprioritised given the project timeline.
+
+Third, no automated end-to-end tests were written for the frontend. Manual testing covered the core user flows, but regression risk is high. Cypress or Playwright tests for the login flow, resume upload, and match display would be the first addition in a production hardening phase.
+
+Fourth, the job posting form in the recruiter dashboard accepts free-text skill requirements without normalisation. A recruiter entering ``JavaScript'' and another entering ``JS'' produce different skill tags that the matcher treats as distinct entities, degrading matching quality. A controlled vocabulary with autocomplete would address this.
+
+Despite these limitations, the frontend demonstrates a coherent implementation of an AI-transparent recruitment interface using contemporary tooling, with documented accessibility considerations --- a contribution that extends beyond the minimum viable specification.

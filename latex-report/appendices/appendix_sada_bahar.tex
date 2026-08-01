@@ -1,0 +1,32 @@
+\chapter*{Appendix B: Individual Reflection --- Sada Bahar}
+\addcontentsline{toc}{chapter}{Appendix B: Individual Reflection --- Sada Bahar}
+\textbf{Name:} Sada Bahar \hfill \textbf{Banner ID:} [B00XXXXXX] \\[4pt]
+\textbf{Role:} NLP Engineer --- Resume Parsing \& Named Entity Recognition
+\vspace{1em}
+
+\section*{B.1 Self-Reflection}
+
+My background before this project was primarily in data analysis using pandas and scikit-learn. Natural Language Processing, and particularly sequence labelling with neural models, was territory I had read about but never implemented. This component pushed me into genuinely new technical ground and produced both the greatest frustrations and the most rewarding moments of the project.
+
+The first substantial challenge was data annotation. I understood intellectually that supervised NER requires labelled training data, but the practical reality of annotating 500 resume documents using Doccano was far more demanding than anticipated. Achieving consistent annotation across nine entity types --- particularly distinguishing SKILL from JOB\_TITLE and INSTITUTION from COMPANY in ambiguous contexts --- required multiple alignment passes with my own prior annotations to ensure intra-annotator consistency. This experience gave me a concrete appreciation for why inter-annotator agreement metrics such as Cohen's kappa are reported in NLP papers: consistency is genuinely difficult to achieve and directly affects model performance.
+
+The progression from rule-based to spaCy to BERT models was structured as a research comparison, and this framing was pedagogically valuable. Implementing the rule-based baseline first --- regex for email and phone, keyword matching against the SKILLS\_KB, degree heuristics --- gave me a concrete performance floor against which to measure subsequent improvements. When spaCy fine-tuning improved skill extraction F1 from 0.71 (rule-based) to 0.84, and BERT improved it further to 0.91, I could attribute the gains to specific modelling choices rather than treating them as opaque numbers.
+The OCR pre-processing pipeline was an unexpected but important learning. A significant portion of the test corpus consisted of scanned PDF resumes where pdfminer.six returned empty or garbled text. Integrating Tesseract OCR via pytesseract as a fallback required understanding image pre-processing: converting PDF pages to 300 DPI PNG images, applying greyscale conversion and adaptive thresholding before OCR, and post-processing the output to remove common noise characters. This was not part of my original plan but proved essential for realistic evaluation.
+
+The main area of personal weakness I identified was in experimental rigour. My initial evaluation compared the three NER models on the full annotated dataset without holding out a test set before any development. When I realised this, I had to re-annotate a separate 200-document test set, which cost two weeks. This experience made the concept of train/validation/test split hygiene concrete in a way that reading about it had not.
+
+\textbf{Key strengths demonstrated:} systematic comparison of three NER approaches under controlled conditions; ability to build annotation pipelines and maintain annotation consistency; integration of OCR pre-processing into an NLP pipeline.
+
+\textbf{Skills developed:} spaCy custom NER training; HuggingFace Trainer API for BERT fine-tuning; Doccano annotation workflow; pdfminer.six and pytesseract integration; seqeval evaluation metrics.
+
+\section*{B.2 Critical Appraisal}
+
+The NLP Parser component successfully implements all three planned model modes (rule-based, spaCy, BERT) and integrates with the backend queue service via a clean FastAPI interface. The rule-based baseline achieves F1 of 0.71 for skill extraction, spaCy fine-tuned achieves 0.84, and BERT achieves 0.91 on the held-out test set. These results are consistent with published literature and provide a reproducible benchmark.
+
+However, several limitations must be acknowledged. The SKILLS\_KB used in the rule-based and spaCy models contains approximately 800 skill terms, curated manually. This is substantially smaller than industry knowledge bases such as the ESCO competency framework, which contains over 13,890 skills. The restricted vocabulary inflates the precision of the baseline while depressing recall, potentially flattering the rule-based approach in the comparison.
+
+The BERT model was fine-tuned on \texttt{bert-base-uncased}, a general-domain checkpoint. A domain-adapted checkpoint such as \texttt{linkedin-bert} or a model pre-trained on job descriptions would likely yield higher F1, particularly for emerging technology skills not well-represented in Wikipedia and BookCorpus pre-training data. This is a direction for future work.
+
+OCR quality remains a significant pipeline bottleneck. On the scanned document subset, BERT NER F1 drops from 0.91 to 0.79 due to character-level OCR errors that corrupt entity spans. Pre-processing quality is therefore the primary ceiling on overall pipeline performance for real-world deployment, suggesting that investment in OCR quality improvement would yield greater returns than further NER model refinement.
+
+Finally, the FastAPI service currently loads the BERT model into memory on startup, which takes approximately 45 seconds in the Docker container. This is acceptable for a research prototype but would require model serving optimisation (TorchServe, ONNX export, or model quantisation) before production deployment.
