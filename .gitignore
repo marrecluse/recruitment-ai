@@ -8,3 +8,4 @@ __pycache__/
 .DS_Store
 mongo_data/
 *.log
+*.zip

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Toaster } from 'react-hot-toast';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
@@ -111,6 +112,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <CssBaseline />
+          <Toaster position="top-right" toastOptions={{
+            style: { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' },
+            success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
+            error:   { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
+          }} />
           <App />
         </ThemeProvider>
       </BrowserRouter>

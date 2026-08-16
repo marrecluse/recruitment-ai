@@ -6,8 +6,10 @@ export const fetchMatchesForJob = createAsyncThunk('matches/forJob', async (jobI
   return { jobId, matches: data };
 });
 
-export const fetchMyMatches = createAsyncThunk('matches/mine', async () => {
-  const { data } = await api.get('/matches/mine');
+// Pass an optional resumeId to filter matches for a specific CV
+export const fetchMyMatches = createAsyncThunk('matches/mine', async (resumeId) => {
+  const url = resumeId ? `/matches/mine?resumeId=${resumeId}` : '/matches/mine';
+  const { data } = await api.get(url);
   return data;
 });
 
@@ -21,7 +23,11 @@ const matchSlice = createSlice({
        s.loading = false;
        s.byJob[a.payload.jobId] = a.payload.matches;
      })
-     .addCase(fetchMyMatches.fulfilled, (s, a) => { s.myMatches = a.payload; });
+     .addCase(fetchMyMatches.pending,   s => { s.loading = true; })
+     .addCase(fetchMyMatches.fulfilled, (s, a) => {
+       s.loading = false;
+       s.myMatches = a.payload;
+     });
   },
 });
 

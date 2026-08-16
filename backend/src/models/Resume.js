@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const resumeSchema = new mongoose.Schema({
   candidate:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   filename:   { type: String, required: true },
+  fileData:   { type: Buffer },
+  fileMime:   { type: String },
   mimetype:   { type: String },
   status:     { type: String, enum: ['pending','processing','completed','failed'], default: 'pending' },
   errorMsg:   { type: String, default: null },
