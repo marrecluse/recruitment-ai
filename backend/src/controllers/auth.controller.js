@@ -14,7 +14,6 @@ exports.register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   const { name, email, password, role } = req.body;
-  // Prevent self-registering as admin
   const safeRole = role === 'admin' ? 'candidate' : role;
   if (await User.findOne({ email })) return res.status(409).json({ error: 'Email already in use' });
   const user = await User.create({ name, email, password, role: safeRole });
@@ -57,25 +56,14 @@ exports.logout = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
-  // Always return 200 to avoid email enumeration
   if (!user) return res.json({ message: 'If that email exists, a reset code has been sent.' });
-  
-  const token = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-char code
-  const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
-  
+  const token = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const expires = new Date(Date.now() + 15 * 60 * 1000);
   await User.findByIdAndUpdate(user._id, {
     passwordResetToken: token,
     passwordResetExpires: expires,
   });
-
-  // Fire-and-forget — don't block the response on email delivery
-  sendPasswordResetEmail({
-    to:         user.email,
-    name:       user.name || user.email,
-    resetCode:  token,
-    expiresIn:  '15 minutes',
-  }).catch(() => {});
-
+  sendPasswordResetEmail({ to: user.email, name: user.name || user.email, resetCode: token, expiresIn: '15 minutes' }).catch(() => {});
   res.json({ message: 'If that email exists, a reset code has been sent.' });
 };
 
@@ -85,23 +73,19 @@ exports.resetPassword = async (req, res) => {
     return res.status(400).json({ error: 'email, resetCode and newPassword are required' });
   if (newPassword.length < 8)
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
-
   const user = await User.findOne({
     email,
     passwordResetToken: resetCode.toUpperCase(),
     passwordResetExpires: { $gt: new Date() },
   });
   if (!user) return res.status(400).json({ error: 'Invalid or expired reset code' });
-
   user.password = newPassword;
   user.passwordResetToken = null;
   user.passwordResetExpires = null;
   user.refreshToken = null;
   await user.save();
-
   res.json({ message: 'Password updated successfully. Please log in.' });
 };
-
 
 exports.getMe = async (req, res) => {
   res.json({ user: req.user });
